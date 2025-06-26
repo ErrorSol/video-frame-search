@@ -38,7 +38,7 @@ fastapi/
 ### 1. Clone Repository
 
 ```bash
-git clone <your-repo-url>
+git clone https://github.com/ErrorSol/video-frame-search.git
 cd fastapi
 ```
 
