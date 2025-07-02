@@ -2,13 +2,13 @@ import cv2
 import numpy as np
 from pathlib import Path
 
-def extract_frames(video_path: Path, out_dir: Path, every_n_sec: int = 1):
+def extract_frames(video_path: Path, out_dir: Path, every_n_sec: float = 1):
     out_dir.mkdir(parents=True, exist_ok=True)
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
         raise ValueError(f"Cannot open {video_path}")
     fps = cap.get(cv2.CAP_PROP_FPS) or 30
-    interval = int(fps * every_n_sec)
+    interval = float(fps * every_n_sec)
 
     frame_id, saved = 0, []
     while True:

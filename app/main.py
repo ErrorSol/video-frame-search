@@ -23,16 +23,17 @@ def on_startup() -> None:
     UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
     FRAME_DIR.mkdir(parents=True, exist_ok=True)
 
-def _store_frames_and_vectors(video_path: Path, every_n_sec: int = 1) -> int:
+def _store_frames_and_vectors(video_path: Path, every_n_sec: int = 1):
+    """Extract frames, insert vectors, and return a list of relative filenames."""
     frames = extract_frames(video_path, FRAME_DIR, every_n_sec)
-    for frame_path in frames:
-        vec = compute_feature_vector(frame_path)
-        add_vector(
-            id=int(uuid.uuid4().int >> 64),
-            vector=vec,
-            payload={"frame_path": str(frame_path)}
-        )
-    return len(frames)
+    rel_names = []                                 # <- collect relative names
+
+    for p in frames:
+        vec = compute_feature_vector(p)
+        add_vector(int(uuid.uuid4().int >> 64), vec, {"frame_path": str(p)})
+        rel_names.append(p.name)                   # frames/frame_0.jpg -> frame_0.jpg
+
+    return len(frames), rel_names
 
 @app.get("/", tags=["Health"])
 def root():
@@ -49,15 +50,16 @@ async def upload_video(
         shutil.copyfileobj(file.file, fout)
 
     loop = asyncio.get_running_loop()
-    frame_count = await loop.run_in_executor(
+    frame_count, frame_names = await loop.run_in_executor(
         None, _store_frames_and_vectors, dst, interval
     )
 
     return {
         "message": "Video uploaded",
         "frames_extracted": frame_count,
-        "interval_sec": interval
+        "frame_paths": frame_names      # 👈 Streamlit needs this
     }
+
 
 @app.post("/vector/search", response_model=list[SearchHit])
 async def search_similar(req: SearchRequest):
